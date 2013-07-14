@@ -9,83 +9,139 @@ var VimeoState = {
   PAUSED: 2,
   BUFFERING: 3
 };
-
+ 
 /**
  * Vimeo Media Controller - Wrapper for Vimeo Media API
- * @param {vjs.Player|Object} player
+ * @param {videojs.Player|Object} player
  * @param {Object=} options
  * @param {Function=} ready
  * @constructor
  */
-vjs.Vimeo = function(player, options, ready){
-  goog.base(this, player, options, ready);
+videojs.Vimeo = videojs.MediaTechController.extend({
+  init: function(player, options, ready){
+    videojs.MediaTechController.call(this, player, options, ready);
+    
+    this.player_ = player;
+    this.player_el_ = document.getElementById(this.player_.id());
 
-  // Regex that parse the video ID for any Vimeo URL
-  var regExp = /^.*(vimeo\.com\/)((channels\/[A-z]+\/)|(groups\/[A-z]+\/videos\/))?([0-9]+)/;
-  var match = options.source.src.match(regExp);
+    // Disable lockShowing because we always use Vimeo controls
+    this.player_.controls(false);
+      
+    // Regex that parse the video ID for any Vimeo URL
+    var regExp = /^.*(vimeo\.com\/)((channels\/[A-z]+\/)|(groups\/[A-z]+\/videos\/))?([0-9]+)/;
+    var match = player.options().src.match(regExp);
 
-  if (match){
-    this.videoId = match[5];
+    if (match){
+      this.videoId = match[5];
+      // TODO: Get the poster URL using Ajax
+    }
+    
+    this.id_ = this.player_.id() + '_vimeo_api';
 
-    // TODO: Get the poster URL using Ajax
+    this.el_ = videojs.Component.prototype.createEl('iframe', {
+      id: this.id_,
+      className: 'vjs-tech',
+      scrolling: 'no',
+      marginWidth: 0,
+      marginHeight: 0,
+      frameBorder: 0,
+      webkitAllowFullScreen: '',
+      mozallowfullscreen: '',
+      allowFullScreen: ''
+    });
+    
+    this.player_el_.insertBefore(this.el_, this.player_el_.firstChild);
+    
+    var params = {
+      api: 1,
+      byline: 0,
+      portrait: 0,
+      show_title: 0,
+      show_byline: 0,
+      show_portait: 0,
+      fullscreen: 1,
+      player_id: this.id_,
+      autoplay: (this.player_.options().autoplay)?1:0,
+      loop: (this.player_.options().loop)?1:0
+    };
+    
+    this.baseUrl = (document.location.protocol == 'https')? 'https://secure.vimeo.com/video/' : 'http://player.vimeo.com/video/';
+
+    this.vimeo = {};
+    this.vimeoInfo = {};
+
+    this.el_.vjsTech = this;
+    this.el_.onload = function() { this.vjsTech.onLoad(); };
+
+    this.el_.src = this.baseUrl + this.videoId + '?' + videojs.Vimeo.makeQueryString(params);
+
+    // Remove the big play button and the control bar, we use Vimeo controls
+    // Doesn't exist right away because the DOM hasn't created it
+    var self = this;
+    setTimeout(function(){ 
+      var bigPlayDom = self.player_.bigPlayButton.el();
+      bigPlayDom.parentNode.removeChild(bigPlayDom);
+      
+      var controlBarDom = self.player_.controlBar.el();
+      controlBarDom.parentNode.removeChild(controlBarDom);
+    }, 50);
   }
+});
 
-  this.id_ = this.player_.id() + '_vimeo_api';
-
-  var params = {
-    api: 1,
-    byline: 0,
-    portrait: 0,
-    show_title: 0,
-    show_byline: 0,
-    show_portait: 0,
-    fullscreen: 1,
-    player_id: this.id(),
-    //controls: (this.player_.options_.ytcontrols)?1:0,
-    autoplay: (this.player_.options_.autoplay)?1:0,
-    loop: (this.player_.options_.loop)?1:0
-  };
-
-  this.baseUrl = (document.location.protocol == 'https')? 'https://secure.vimeo.com/video/' : 'http://player.vimeo.com/video/';
-
-  this.vimeo = {};
-  this.vimeoInfo = {};
-
-  this.el_.vjsTech = this;
-  this.el_.onload = function() { this.vjsTech.onLoad(); };
-
-  this.el_.src = this.baseUrl + this.videoId + '?' + vjs.Vimeo.makeQueryString(params);
-};
-goog.inherits(vjs.Vimeo, vjs.MediaTechController);
-
-vjs.Vimeo.prototype.dispose = function(){
-  goog.base(this, 'dispose');
+videojs.Vimeo.prototype.dispose = function(){
   this.vimeo.api('unload');
   delete this.vimeo;
   this.el_.parentNode.removeChild(this.el_);
+  
+  videojs.MediaTechController.prototype.dispose.call(this);
 };
 
-vjs.Vimeo.prototype.createEl = function(){
-  var player = this.player_;
-
-  var iframe = vjs.createEl('iframe', {
-    id: player.id() + '_vimeo_api',
-    className: 'vjs-tech',
-    scrolling: 'no',
-    marginWidth: 0,
-    marginHeight: 0,
-    frameBorder: 0,
-    webkitAllowFullScreen: '',
-    mozallowfullscreen: '',
-    allowFullScreen: ''
-  });
-
-  vjs.insertFirst(iframe, player.el());
-
-  return iframe;
+videojs.Vimeo.prototype.play = function(){ this.vimeo.api('play'); };
+videojs.Vimeo.prototype.pause = function(){ this.vimeo.api('pause'); };
+videojs.Vimeo.prototype.paused = function(){
+  return this.lastState !== VimeoState.PLAYING &&
+         this.lastState !== VimeoState.BUFFERING;
 };
 
-vjs.Vimeo.prototype.onLoad = function(){
+videojs.Vimeo.prototype.currentTime = function(){ return this.vimeoInfo.time || 0; };
+
+videojs.Vimeo.prototype.setCurrentTime = function(seconds){
+  this.vimeo.api('seekTo', seconds);
+  this.player_.trigger('timeupdate');
+};
+
+videojs.Vimeo.prototype.duration = function(){ return this.vimeoInfo.duration || 0; };
+videojs.Vimeo.prototype.buffered = function(){ return videojs.createTimeRange(0, this.vimeoInfo.buffered || 0); };
+
+videojs.Vimeo.prototype.volume = function() { return (this.vimeoInfo.muted)? this.vimeoInfo.muteVolume : this.vimeoInfo.volume; };
+videojs.Vimeo.prototype.setVolume = function(percentAsDecimal){
+  this.vimeo.api('setvolume', percentAsDecimal);
+  this.vimeo.vimeoInfo.volume = percentAsDecimal;
+  this.player_.trigger('volumechange');
+};
+
+videojs.Vimeo.prototype.muted = function() { return this.vimeoInfo.muted || false; };
+videojs.Vimeo.prototype.setMuted = function(muted) { 
+  if (muted) {
+    this.vimeoInfo.muteVolume = this.vimeoInfo.volume;
+    this.setVolume(0);
+  } else { 
+    this.setVolume(this.vimeoInfo.muteVolume);
+  } 
+
+  this.vimeoInfo.muted = muted;
+  this.player_.trigger('volumechange');
+};
+
+videojs.Vimeo.prototype.onReady = function(){
+  this.isReady_ = true;
+  this.player_.trigger('techready');
+
+  this.triggerReady();
+  this.player_.trigger('durationchange');
+};
+
+videojs.Vimeo.prototype.onLoad = function(){
   this.vimeo = $f(this.el_);
 
   this.vimeoInfo = {
@@ -99,65 +155,17 @@ vjs.Vimeo.prototype.onLoad = function(){
     url: this.baseUrl + this.videoId,
     error: null
   };
-
-  this.vimeo.addEvent('ready', function(id){ vjs.el(id).vjsTech.onReady(); });
-  this.vimeo.addEvent('loadProgress', function(data, id){ vjs.el(id).vjsTech.onLoadProgress(data); });
-  this.vimeo.addEvent('playProgress', function(data, id){ vjs.el(id).vjsTech.onPlayProgress(data); });
-  this.vimeo.addEvent('play', function(id){ vjs.el(id).vjsTech.onPlay(); });
-  this.vimeo.addEvent('pause', function(id){ vjs.el(id).vjsTech.onPause(); });
-  this.vimeo.addEvent('finish', function(id){ vjs.el(id).vjsTech.onFinish(); });
-  this.vimeo.addEvent('seek', function(id){ vjs.el(id).vjsTech.onSeek(data); });
+  
+  this.vimeo.addEvent('ready', function(id){ document.getElementById(id).vjsTech.onReady(); });
+  this.vimeo.addEvent('loadProgress', function(data, id){ document.getElementById(id).vjsTech.onLoadProgress(data); });
+  this.vimeo.addEvent('playProgress', function(data, id){ document.getElementById(id).vjsTech.onPlayProgress(data); });
+  this.vimeo.addEvent('play', function(id){ document.getElementById(id).vjsTech.onPlay(); });
+  this.vimeo.addEvent('pause', function(id){ document.getElementById(id).vjsTech.onPause(); });
+  this.vimeo.addEvent('finish', function(id){ document.getElementById(id).vjsTech.onFinish(); });
+  this.vimeo.addEvent('seek', function(id){ document.getElementById(id).vjsTech.onSeek(data); });
 };
 
-vjs.Vimeo.prototype.play = function(){ this.vimeo.api('play'); };
-vjs.Vimeo.prototype.pause = function(){ this.vimeo.api('pause'); };
-vjs.Vimeo.prototype.paused = function(){
-  return this.lastState !== VimeoState.PLAYING &&
-         this.lastState !== VimeoState.BUFFERING;
-};
-
-vjs.Vimeo.prototype.currentTime = function(){ return this.vimeoInfo.time || 0; };
-
-vjs.Vimeo.prototype.setCurrentTime = function(seconds){
-  this.vimeo.api('seekTo', seconds);
-  this.player_.trigger('timeupdate');
-};
-
-vjs.Vimeo.prototype.duration = function(){ return this.vimeoInfo.duration || 0; };
-vjs.Vimeo.prototype.buffered = function(){ return vjs.createTimeRange(0, this.vimeoInfo.buffered || 0); };
-
-vjs.Vimeo.prototype.volume = function() { return (this.vimeoInfo.muted)? this.vimeoInfo.muteVolume : this.vimeoInfo.volume; };
-vjs.Vimeo.prototype.setVolume = function(percentAsDecimal){
-  this.vimeo.api('setvolume', percentAsDecimal);
-  this.vimeo.vimeoInfo.volume = percentAsDecimal;
-  this.player_.trigger('volumechange');
-};
-
-vjs.Vimeo.prototype.muted = function() { return this.vimeoInfo.muted || false; };
-vjs.Vimeo.prototype.setMuted = function(muted) { 
-  if (muted) {
-    this.vimeoInfo.muteVolume = this.vimeoInfo.volume;
-    this.setVolume(0);
-  } else { 
-    this.setVolume(this.vimeoInfo.muteVolume);
-  } 
-
-  this.vimeoInfo.muted = muted;
-  this.player_.trigger('volumechange');
-};
-
-vjs.Vimeo.prototype.onReady = function(){
-  this.triggerReady();
-  this.player_.trigger('canplay');
-
-  // We can't hide the Vimeo control bar so we hide the VJS control bar
-  // TODO: 
-  this.player_.bigPlayButton.hide();
-  this.player_.posterImage.hide();
-  this.player_.controlBar.hide();
-};
-
-vjs.Vimeo.prototype.onLoadProgress = function(data){
+videojs.Vimeo.prototype.onLoadProgress = function(data){
   var durationUpdate = !this.vimeoInfo.duration;
   this.vimeoInfo.duration = data.duration;
   this.vimeoInfo.buffered = data.percent;
@@ -165,46 +173,50 @@ vjs.Vimeo.prototype.onLoadProgress = function(data){
   if (durationUpdate) this.player_.trigger('durationchange');
 };
 
-vjs.Vimeo.prototype.onPlayProgress = function(data){
+videojs.Vimeo.prototype.onPlayProgress = function(data){
   this.vimeoInfo.time = data.seconds;
   this.player_.trigger('timeupdate');
 };
 
-vjs.Vimeo.prototype.onPlay = function(){
+videojs.Vimeo.prototype.onPlay = function(){
   this.vimeoInfo.state = VimeoState.PLAYING;
   this.player_.trigger('play');
 };
 
-vjs.Vimeo.prototype.onPause = function(){
+videojs.Vimeo.prototype.onPause = function(){
   this.vimeoInfo.state = VimeoState.PAUSED;
   this.player_.trigger('pause');
 };
 
-vjs.Vimeo.prototype.onFinish = function(){
+videojs.Vimeo.prototype.onFinish = function(){
   this.vimeoInfo.state = VimeoState.ENDED;
   this.player_.trigger('ended');
 };
 
-vjs.Vimeo.prototype.onSeek = function(data){
+videojs.Vimeo.prototype.onSeek = function(data){
   this.vimeoInfo.time = data.seconds;
   this.player_.trigger('timeupdate');
   this.player_.trigger('seeked');
 };
 
-vjs.Vimeo.isSupported = function(){
+videojs.Vimeo.prototype.onError = function(error){
+  this.player_.error = error;
+  this.player_.trigger('error');
+};
+
+videojs.Vimeo.isSupported = function(){
   return true;
 };
 
-vjs.Vimeo.canPlaySource = function(srcObj){
+videojs.Vimeo.prototype.supportsFullScreen = function() {
+  return false;
+};
+
+videojs.Vimeo.canPlaySource = function(srcObj){
   return (srcObj.type == 'video/vimeo');
 };
 
-vjs.Vimeo.prototype.features = {
-  fullscreen: true,
-  volumeControl: true
-};
-
-vjs.Vimeo.makeQueryString = function(args){
+videojs.Vimeo.makeQueryString = function(args){
   var array = [];
   for (var key in args){
     if (args.hasOwnProperty(key)){

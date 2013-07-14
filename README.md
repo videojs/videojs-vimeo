@@ -6,11 +6,10 @@ Including the script vjs.vimeo.js will add the Vimeo as a tech. You just have to
 
 Here is an example:
 
-	<link href="http://vjs.zencdn.net/c/video-js.css" rel="stylesheet">
-	<script src="http://vjs.zencdn.net/c/video.js"></script>
-	<script src="vjs.vimeo.js"></script>
-	<video id="vid1" class="video-js vjs-default-skin" controls preload="auto" width="640" height="360" data-setup='{ "techOrder": ["vimeo", "html5", "flash"] }'>
-	  <source src="https://vimeo.com/63186969" type="video/vimeo">
+	<link href="../lib/video-js.css" rel="stylesheet">
+	<script src="../lib/video.js"></script>
+	<script src="../vjs.vimeo.js"></script>
+	<video id="vid1" src="" class="video-js vjs-default-skin" controls preload="auto" width="640" height="360" data-setup='{ "techOrder": ["vimeo"], "src": "https://vimeo.com/63186969", "loop": true, "autoplay": false }'>
 	  <p>Video Playback Not Supported</p>
 	</video>
 
