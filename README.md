@@ -25,7 +25,7 @@ Here is 2 examples:
 		</video>
 	  
 	  <script src="video.js"></script>
-	  <script src="media.vimeo.js"></script>
+	  <script src="vjs.vimeo.js"></script>
 	  <script>
 	  videojs('vid2', { "techOrder": ["vimeo"], "src": "https://vimeo.com/63186969" }).ready(function() {
 	    // You can use the video.js events even though we use the vimeo controls
