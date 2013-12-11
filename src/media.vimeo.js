@@ -51,6 +51,8 @@ videojs.Vimeo = videojs.MediaTechController.extend({
     var self = this;
     this.el_.onload = function() { self.onLoad(); };
 
+    this.startMuted = player.options()['muted'];
+
     this.src(player.options()['src']);
   }
 });
@@ -111,7 +113,7 @@ videojs.Vimeo.prototype.buffered = function(){ return videojs.createTimeRange(0,
 videojs.Vimeo.prototype.volume = function() { return (this.vimeoInfo.muted)? this.vimeoInfo.muteVolume : this.vimeoInfo.volume; };
 videojs.Vimeo.prototype.setVolume = function(percentAsDecimal){
   this.vimeo.api('setvolume', percentAsDecimal);
-  this.vimeo.vimeoInfo.volume = percentAsDecimal;
+  this.vimeoInfo.volume = percentAsDecimal;
   this.player_.trigger('volumechange');
 };
 
@@ -131,6 +133,11 @@ videojs.Vimeo.prototype.setMuted = function(muted) {
 videojs.Vimeo.prototype.onReady = function(){
   this.isReady_ = true;
   this.triggerReady();
+  
+  if (this.startMuted) {
+    this.setMuted(true);
+    this.startMuted = false;
+  }
 };
 
 videojs.Vimeo.prototype.onLoad = function(){
