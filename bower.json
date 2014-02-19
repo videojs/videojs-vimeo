@@ -1,0 +1,6 @@
+{
+  "name": "eXon/videojs-vimeo",
+  "version": "1.0.0",
+  "main": ["lib/video-js.css", "lib/video.js", "lib/video-js.swf"],
+  "description": "Allows you to use Vimeo URL as source with Video.js."
+}
