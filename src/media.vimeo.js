@@ -355,7 +355,7 @@ var Froogaloop = (function(){
      * @param target (HTMLElement): Target iframe to post the message to.
      */
     function postMessage(method, params, target) {
-        if (!target.contentWindow.postMessage) {
+        if (!target || !target.contentWindow || !target.contentWindow.postMessage) {
             return false;
         }
 
@@ -450,7 +450,7 @@ var Froogaloop = (function(){
      * Retrieves stored callbacks.
      */
     function getCallback(eventName, target_id) {
-        if (target_id) {
+        if (target_id && eventCallbacks[target_id]) {
             return eventCallbacks[target_id][eventName];
         }
         else {
