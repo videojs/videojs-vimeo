@@ -23,6 +23,14 @@ videojs.Vimeo = videojs.MediaTechController.extend({
     
     this.player_ = player;
     this.player_el_ = document.getElementById(this.player_.id());
+    
+    
+    // Copy the JavaScript options if they exists
+    if (typeof options['source'] != 'undefined') {
+        for (var key in options['source']) {
+            player.options()[key] = options['source'][key];
+        }
+    }
 
     // Disable lockShowing because we always use Vimeo controls
     this.player_.controls(false);
