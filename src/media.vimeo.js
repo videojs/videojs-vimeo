@@ -51,7 +51,7 @@ videojs.Vimeo = videojs.MediaTechController.extend({
     
     this.player_el_.insertBefore(this.el_, this.player_el_.firstChild);
     
-    this.baseUrl = (document.location.protocol == 'https')? 'https://secure.vimeo.com/video/' : 'http://player.vimeo.com/video/';
+    this.baseUrl = '//player.vimeo.com/video/';
 
     this.vimeo = {};
     this.vimeoInfo = {};
