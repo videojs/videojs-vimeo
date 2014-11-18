@@ -4,6 +4,6 @@
   "main": ["vjs.vimeo.js"],
   "description": "Allows you to use Vimeo URL as source with Video.js.",
   "dependencies": {
-    "videojs": "~4.3.0"
+    "videojs": "4"
   }
 }
