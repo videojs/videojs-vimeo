@@ -9,7 +9,7 @@ var VimeoState = {
   PAUSED: 2,
   BUFFERING: 3
 };
- 
+
 /**
  * Vimeo Media Controller - Wrapper for Vimeo Media API
  * @param {videojs.Player|Object} player
@@ -20,7 +20,7 @@ var VimeoState = {
 videojs.Vimeo = videojs.MediaTechController.extend({
   init: function(player, options, ready){
     videojs.MediaTechController.call(this, player, options, ready);
-    
+
     // Copy the JavaScript options if they exists
     if (typeof options['source'] != 'undefined') {
         for (var key in options['source']) {
@@ -30,8 +30,8 @@ videojs.Vimeo = videojs.MediaTechController.extend({
 
     this.player_ = player;
     this.player_el_ = document.getElementById(this.player_.id());
-    
-    
+
+
     // Copy the JavaScript options if they exists
     if (typeof options['source'] != 'undefined') {
         for (var key in options['source']) {
@@ -41,7 +41,7 @@ videojs.Vimeo = videojs.MediaTechController.extend({
 
     // Disable lockShowing because we always use Vimeo controls
     this.player_.controls(false);
-    
+
     this.id_ = this.player_.id() + '_vimeo_api';
 
     this.el_ = videojs.Component.prototype.createEl('iframe', {
@@ -55,9 +55,9 @@ videojs.Vimeo = videojs.MediaTechController.extend({
       mozallowfullscreen: 'true',
       allowFullScreen: 'true'
     });
-    
+
     this.player_el_.insertBefore(this.el_, this.player_el_.firstChild);
-    
+
     this.baseUrl = '//player.vimeo.com/video/';
 
     this.vimeo = {};
@@ -76,13 +76,13 @@ videojs.Vimeo.prototype.dispose = function(){
   this.vimeo.api('unload');
   delete this.vimeo;
   this.el_.parentNode.removeChild(this.el_);
-  
+
   videojs.MediaTechController.prototype.dispose.call(this);
 };
 
 videojs.Vimeo.prototype.src = function(src){
   this.isReady_ = false;
-  
+
   // Regex that parse the video ID for any Vimeo URL
   var regExp = /^.*(vimeo\.com\/)((channels\/[A-z]+\/)|(groups\/[A-z]+\/videos\/))?([0-9]+)/;
   var match = src.match(regExp);
@@ -90,7 +90,7 @@ videojs.Vimeo.prototype.src = function(src){
   if (match){
     this.videoId = match[5];
   }
-  
+
   var params = {
     api: 1,
     byline: 0,
@@ -103,7 +103,7 @@ videojs.Vimeo.prototype.src = function(src){
     autoplay: (this.player_.options()['autoplay'])?1:0,
     loop: (this.player_.options()['loop'])?1:0
   };
-  
+
   this.el_.src = this.baseUrl + this.videoId + '?' + videojs.Vimeo.makeQueryString(params);
 };
 
@@ -133,13 +133,13 @@ videojs.Vimeo.prototype.setVolume = function(percentAsDecimal){
 };
 
 videojs.Vimeo.prototype.muted = function() { return this.vimeoInfo.muted || false; };
-videojs.Vimeo.prototype.setMuted = function(muted) { 
+videojs.Vimeo.prototype.setMuted = function(muted) {
   if (muted) {
     this.vimeoInfo.muteVolume = this.vimeoInfo.volume;
     this.setVolume(0);
-  } else { 
+  } else {
     this.setVolume(this.vimeoInfo.muteVolume);
-  } 
+  }
 
   this.vimeoInfo.muted = muted;
   this.player_.trigger('volumechange');
@@ -148,7 +148,7 @@ videojs.Vimeo.prototype.setMuted = function(muted) {
 videojs.Vimeo.prototype.onReady = function(){
   this.isReady_ = true;
   this.triggerReady();
-  
+
   if (this.startMuted) {
     this.setMuted(true);
     this.startMuted = false;
@@ -160,9 +160,9 @@ videojs.Vimeo.prototype.onLoad = function(){
     this.vimeo.api('unload');
     delete this.vimeo;
   }
-  
+
   this.vimeo = $f(this.el_);
-  
+
   this.vimeoInfo = {
     state: VimeoState.UNSTARTED,
     volume: 1,
@@ -174,18 +174,18 @@ videojs.Vimeo.prototype.onLoad = function(){
     url: this.baseUrl + this.videoId,
     error: null
   };
-  
+
   var self = this;
-  this.vimeo.addEvent('ready', function(id){ 
+  this.vimeo.addEvent('ready', function(id){
     self.onReady();
-    
+
     self.vimeo.addEvent('loadProgress', function(data, id){ self.onLoadProgress(data); });
     self.vimeo.addEvent('playProgress', function(data, id){ self.onPlayProgress(data); });
     self.vimeo.addEvent('play', function(id){ self.onPlay(); });
     self.vimeo.addEvent('pause', function(id){ self.onPause(); });
     self.vimeo.addEvent('finish', function(id){ self.onFinish(); });
     self.vimeo.addEvent('seek', function(data, id){ self.onSeek(data); });
-    
+
   });
 };
 
