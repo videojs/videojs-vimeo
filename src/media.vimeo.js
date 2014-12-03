@@ -73,6 +73,7 @@ videojs.Vimeo = videojs.MediaTechController.extend({
 });
 
 videojs.Vimeo.prototype.dispose = function(){
+  this.vimeo.removeEvent('ready');
   this.vimeo.api('unload');
   delete this.vimeo;
   this.el_.parentNode.removeChild(this.el_);
@@ -157,7 +158,7 @@ videojs.Vimeo.prototype.onReady = function(){
 };
 
 videojs.Vimeo.prototype.onLoad = function(){
-  if (this.vimeo.api) {
+  if (this.vimeo && this.vimeo.api) {
     this.vimeo.api('unload');
     delete this.vimeo;
   }
