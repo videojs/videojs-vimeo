@@ -101,7 +101,8 @@ videojs.Vimeo.prototype.src = function(src){
     fullscreen: 1,
     player_id: this.id_,
     autoplay: (this.player_.options()['autoplay'])?1:0,
-    loop: (this.player_.options()['loop'])?1:0
+    loop: (this.player_.options()['loop'])?1:0,
+    color: this.player_.options()['color'] || ''
   };
 
   this.el_.src = this.baseUrl + this.videoId + '?' + videojs.Vimeo.makeQueryString(params);
