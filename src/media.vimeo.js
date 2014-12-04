@@ -106,6 +106,11 @@ videojs.Vimeo.prototype.src = function(src){
     color: this.player_.options()['color'] || ''
   };
 
+  if (params.color.substring(0, 1) === '#') {
+    // vimeo API takes color without the hash
+    params.color = params.color.substring(1);
+  }
+
   this.el_.src = this.baseUrl + this.videoId + '?' + videojs.Vimeo.makeQueryString(params);
 };
 
