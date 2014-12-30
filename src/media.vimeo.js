@@ -155,7 +155,7 @@ videojs.Vimeo.prototype.setMuted = function(muted) {
 videojs.Vimeo.prototype.onReady = function(){
   this.isReady_ = true;
   this.triggerReady();
-
+  this.player_.trigger('loadedmetadata');
   if (this.startMuted) {
     this.setMuted(true);
     this.startMuted = false;
