@@ -50,7 +50,8 @@ videojs.Vimeo = videojs.MediaTechController.extend({
 
     this.player_el_.insertBefore(this.el_, this.player_el_.firstChild);
 
-    this.baseUrl = document.location.protocol + '//player.vimeo.com/video/';
+    var protocol = (document.location.protocol === 'file:')?'http:': document.location.protocol;
+    this.baseUrl = protocol + '//player.vimeo.com/video/';
 
     this.vimeo = {};
     this.vimeoInfo = {};
