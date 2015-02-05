@@ -57,7 +57,12 @@ videojs.Vimeo = videojs.MediaTechController.extend({
     this.vimeoInfo = {};
 
     var self = this;
-    this.el_.onload = function() { self.onLoad(); };
+    if ( this.el_.attachEvent ) { //Fix for the onLoad event listener on IE8
+      this.el_.attachEvent( 'onload', vjs.bind( self, self.onLoad ) );
+    }
+    else {
+      this.el_.onload = function() { self.onLoad(); };
+    }
 
     this.startMuted = player.options()['muted'];
 
