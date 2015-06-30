@@ -220,6 +220,7 @@ videojs.Vimeo.prototype.onFinish = function(){
 };
 
 videojs.Vimeo.prototype.onSeek = function(data){
+  this.player_.trigger('seeking');
   this.vimeoInfo.time = data.seconds;
   this.player_.trigger('timeupdate');
   this.player_.trigger('seeked');
