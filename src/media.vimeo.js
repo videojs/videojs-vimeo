@@ -42,11 +42,13 @@ videojs.Vimeo = videojs.MediaTechController.extend({
       scrolling: 'no',
       marginWidth: 0,
       marginHeight: 0,
-      frameBorder: 0,
-      webkitAllowFullScreen: 'true',
-      mozallowfullscreen: 'true',
-      allowFullScreen: 'true'
+      frameBorder: 0
     });
+
+    // Fix createEl not creating these attributes.
+    this.el_.setAttribute('webkitAllowFullScreen', '')
+    this.el_.setAttribute('mozallowfullscreen', '')
+    this.el_.setAttribute('allowFullScreen', '')
 
     this.player_el_.insertBefore(this.el_, this.player_el_.firstChild);
 
