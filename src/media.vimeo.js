@@ -237,6 +237,31 @@ videojs.Vimeo.prototype.onError = function(error){
 };
 
 videojs.Vimeo.isSupported = function(){
+  var supportFlash = videojs.Flash.version()[0] >= 10;
+  if (!supportFlash) {
+    //Opera
+    var isOpera = navigator.userAgent.indexOf("Opera") != -1;
+    if (isOpera) {
+      return false;
+    }
+    //Firefox on OSX
+    var isOSX = navigator.userAgent.indexOf('Mac OS X') != -1;
+    var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    if (isOSX && isFirefox) {
+      return false;
+    }
+    //IE <= 10
+    var tridentRegex = /Trident\/([\d\.]+)/;
+    if (tridentRegex.test(navigator.userAgent)) {
+      var version;
+      if (tridentRegex.exec(navigator.userAgent) != null) {
+        version = parseFloat( RegExp.$1 );
+      }
+      if (version && version < 7) {
+        return false;
+      }
+    }
+  }
   return true;
 };
 
