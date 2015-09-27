@@ -1,6 +1,6 @@
 {
   "name": "videojs-vimeo",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Allows you to use Vimeo URL as source with Video.js.",
   "main": "vjs.vimeo.js",
   "scripts": {
@@ -15,8 +15,8 @@
     "vimeo",
     "plugin"
   ],
-  "author": "eXon",
-  "license": "ISC",
+  "author": "Benoit Tremblay <trembl.ben@gmail.com>",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/eXon/videojs-vimeo/issues"
   },
