@@ -74,11 +74,14 @@
   });
 
   videojs.Vimeo.prototype.dispose = function(){
-    this.vimeo.removeEvent('ready');
-    this.vimeo.api('unload');
-    delete this.vimeo;
-    this.el_.parentNode.removeChild(this.el_);
-
+    if (this.vimeo) {
+      this.vimeo.removeEvent('ready');
+      this.vimeo.api('unload');
+      delete this.vimeo;
+   }
+   if (this.el_) {
+     this.el_.parentNode.removeChild(this.el_);
+   }
     videojs.MediaTechController.prototype.dispose.call(this);
   };
 
@@ -503,7 +506,7 @@
           if (target_id && eventCallbacks[target_id]) {
               return eventCallbacks[target_id][eventName];
           }
-          else {
+          else if (eventCallbacks[eventName]) {
               return eventCallbacks[eventName];
           }
       }
