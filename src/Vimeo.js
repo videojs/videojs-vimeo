@@ -24,7 +24,7 @@ THE SOFTWARE. */
     constructor: function(options, ready) {
       Tech.call(this, options, ready);
       this.setPoster(options.poster);
-      this.setSrc(this.options_.source, true);
+      this.setSrc(this.options_.source.src, true);
 
       // Set the vjs-vimeo class to the player
       // Parent is not set yet so we have to wait a tick
@@ -38,13 +38,19 @@ THE SOFTWARE. */
     },
     
     createEl: function() {
-      var div = document.createElement('div');
-      div.setAttribute('id', this.options_.techId);
-      div.setAttribute('style', 'width:100%;height:100%;top:0;left:0;position:absolute');
+      var iframe = document.createElement('iframe');
+      iframe.setAttribute('id', this.options_.techId);
+      iframe.setAttribute('style', 'width:100%;height:100%;top:0;left:0;position:absolute');
+      iframe.setAttribute('title', 'Vimeo Video Player');
+      iframe.setAttribute('width', '640'); //TODO: make flexible
+      iframe.setAttribute('height', '264'); //TODO: make flexible
+      iframe.setAttribute('src', 'https://player.vimeo.com/video/' + Vimeo.parseUrl(this.options_.source.src).videoId + '?api=1&player_id=' + this.options_.techId);
+      iframe.setAttribute('allowfullscreen', '1');
+      iframe.setAttribute('frameborder', '0');
 
       var divWrapper = document.createElement('div');
       divWrapper.setAttribute('style', 'width:100%;height:100%;position:relative');
-      divWrapper.appendChild(div);
+      divWrapper.appendChild(iframe);
 
       if (!_isOnMobile && !this.options_.ytControls) {
         var divBlocker = document.createElement('div');
@@ -296,7 +302,7 @@ THE SOFTWARE. */
           $.getJSON('http://www.vimeo.com/api/v2/video/' + vimeoVideoID + '.json?callback=?', {format: "json"}, (function(_this){
             return function(data) {
               // Set the low resolution first
-              return _this.poster_ = data[0].thumbnail_small;
+              _this.poster_ = data[0].thumbnail_small;
             };
           })(this));
 
@@ -313,8 +319,6 @@ THE SOFTWARE. */
         }
       }
     },
-    
-//    setPoster: function()
 
     play: function() {
       if (!this.url || !this.url.videoId) {
@@ -487,7 +491,7 @@ THE SOFTWARE. */
         $.getJSON('http://www.vimeo.com/api/v2/video/' + this.url.videoId + '.json?callback=?', {format: "json"}, (function(_uri){
           return function(data) {
             // Set the low resolution first
-            return _uri = data[0].thumbnail_large;
+            _uri = data[0].thumbnail_large;
           };
         })(uri));
         
@@ -541,7 +545,7 @@ THE SOFTWARE. */
 
   function loadApi() {
     var tag = document.createElement('script');
-    tag.src = 'https://github.com/vimeo/player-api/blob/master/javascript/froogaloop.js';
+    tag.src = 'https://f.vimeocdn.com/js/froogaloop2.min.js';
     var firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
   }
@@ -581,3 +585,4 @@ THE SOFTWARE. */
 
   videojs.registerTech('Vimeo', Vimeo);
 })();
+
