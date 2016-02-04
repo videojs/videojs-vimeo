@@ -291,8 +291,14 @@ THE SOFTWARE. */
 
       if (!this.options_.poster) {
         if (this.url.videoId) {
-          // Set the low resolution first
-          this.poster_ = 'https://img.youtube.com/vi/' + this.url.videoId + '/0.jpg';
+          var vimeoVideoID = this.url.videoId;
+
+          $.getJSON('http://www.vimeo.com/api/v2/video/' + vimeoVideoID + '.json?callback=?', {format: "json"}, (function(_this){
+            return function(data) {
+              // Set the low resolution first
+              return _this.poster_ = data[0].thumbnail_small;
+            };
+          })(this));
 
           // Check if their is a high res
           this.checkHighResPoster();
@@ -307,6 +313,8 @@ THE SOFTWARE. */
         }
       }
     },
+    
+//    setPoster: function()
 
     play: function() {
       if (!this.url || !this.url.videoId) {
@@ -472,9 +480,17 @@ THE SOFTWARE. */
 
     // Tries to get the highest resolution thumbnail available for the video
     checkHighResPoster: function(){
-      var uri = 'https://img.youtube.com/vi/' + this.url.videoId + '/maxresdefault.jpg';
+      var uri = '';
 
       try {
+        
+        $.getJSON('http://www.vimeo.com/api/v2/video/' + this.url.videoId + '.json?callback=?', {format: "json"}, (function(_uri){
+          return function(data) {
+            // Set the low resolution first
+            return _uri = data[0].thumbnail_large;
+          };
+        })(uri));
+        
         var image = new Image();
         image.onload = function(){
           // Onload may still be called if YouTube returns the 120x90 error thumbnail
@@ -513,18 +529,11 @@ THE SOFTWARE. */
       videoId: null
     };
 
-    var regex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    var regex = /^.*(vimeo\.com\/)((channels\/[A-z]+\/)|(groups\/[A-z]+\/videos\/))?([0-9]+)/;
     var match = url.match(regex);
 
-    if (match && match[2].length === 11) {
-      result.videoId = match[2];
-    }
-
-    var regPlaylist = /[?&]list=([^#\&\?]+)/;
-    match = url.match(regPlaylist);
-
-    if(match && match[1]) {
-      result.listId = match[1];
+    if (match) {
+      result.videoId = match[5];
     }
 
     return result;
@@ -532,7 +541,7 @@ THE SOFTWARE. */
 
   function loadApi() {
     var tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
+    tag.src = 'https://github.com/vimeo/player-api/blob/master/javascript/froogaloop.js';
     var firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
   }
@@ -570,5 +579,5 @@ THE SOFTWARE. */
   loadApi();
   injectCss();
 
-  videojs.registerComponent('Vimeo', Vimeo);
+  videojs.registerTech('Vimeo', Vimeo);
 })();
