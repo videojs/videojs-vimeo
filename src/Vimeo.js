@@ -17,13 +17,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 (function() {
   'use strict';
+  
+  var VimeoState = {
+    UNSTARTED: -1,
+    ENDED: 0,
+    PLAYING: 1,
+    PAUSED: 2,
+    BUFFERING: 3
+  };
 
   var Tech = videojs.getComponent('Tech');
 
   var Vimeo = videojs.extend(Tech, {
     constructor: function(options, ready) {
       Tech.call(this, options, ready);
-      this.setPoster(options.poster);
+      if(options.poster != "") {this.setPoster(options.poster);}
       this.setSrc(this.options_.source.src, true);
 
       // Set the vjs-vimeo class to the player
@@ -31,6 +39,7 @@ THE SOFTWARE. */
       setTimeout(function() {
         this.el_.parentNode.className += ' vjs-vimeo';
       }.bind(this));
+      
     },
     
     dispose: function() {
@@ -38,19 +47,29 @@ THE SOFTWARE. */
     },
     
     createEl: function() {
-      var iframe = document.createElement('iframe');
-      iframe.setAttribute('id', this.options_.techId);
-      iframe.setAttribute('style', 'width:100%;height:100%;top:0;left:0;position:absolute');
-      iframe.setAttribute('title', 'Vimeo Video Player');
-      iframe.setAttribute('width', '640'); //TODO: make flexible
-      iframe.setAttribute('height', '264'); //TODO: make flexible
-      iframe.setAttribute('src', 'https://player.vimeo.com/video/' + Vimeo.parseUrl(this.options_.source.src).videoId + '?api=1&player_id=' + this.options_.techId);
-      iframe.setAttribute('allowfullscreen', '1');
-      iframe.setAttribute('frameborder', '0');
+      this.vimeo = {};
+      this.vimeoInfo = {};
+      this.baseUrl = 'https://player.vimeo.com/video/';
+      this.baseApiUrl = 'http://www.vimeo.com/api/v2/video/';
+      this.videoId = Vimeo.parseUrl(this.options_.source.src).videoId;
+      
+      this.iframe = document.createElement('iframe');
+      this.iframe.setAttribute('id', this.options_.techId);
+      this.iframe.setAttribute('title', 'Vimeo Video Player');
+      this.iframe.setAttribute('class', 'vjs-tech');
+      this.iframe.setAttribute('src', this.baseUrl + this.videoId + '?api=1&player_id=' + this.options_.techId);
+      this.iframe.setAttribute('frameborder', '0');
+      this.iframe.setAttribute('scrolling', 'no');
+      this.iframe.setAttribute('marginWidth', '0');
+      this.iframe.setAttribute('marginHeight', '0');
+      this.iframe.setAttribute('webkitAllowFullScreen', '0');
+      this.iframe.setAttribute('mozallowfullscreen', '0');
+      this.iframe.setAttribute('allowFullScreen', '0');
 
       var divWrapper = document.createElement('div');
       divWrapper.setAttribute('style', 'width:100%;height:100%;position:relative');
-      divWrapper.appendChild(iframe);
+      divWrapper.setAttribute('class', 'vimeoFrame');
+      divWrapper.appendChild(this.iframe);
 
       if (!_isOnMobile && !this.options_.ytControls) {
         var divBlocker = document.createElement('div');
@@ -59,201 +78,109 @@ THE SOFTWARE. */
 
         // In case the blocker is still there and we want to pause
         divBlocker.onclick = function() {
-          this.pause();
+          this.onPause();
         }.bind(this);
 
         divWrapper.appendChild(divBlocker);
       }
 
       if (Vimeo.isApiReady) {
-        this.initYTPlayer();
+        this.initPlayer();
       } else {
         Vimeo.apiReadyQueue.push(this);
+      }
+      
+      if(this.options_.poster == "") {
+        $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', {format: "json"}, (function(_this){
+          return function(data) {
+            // Set the low resolution first
+            _this.setPoster(data[0].thumbnail_large);
+          };
+        })(this));
       }
 
       return divWrapper;
     },
     
-    initYTPlayer: function() {
-      var playerVars = {
-        controls: 0,
-        modestbranding: 1,
-        rel: 0,
-        showinfo: 0,
-        loop: this.options_.loop ? 1 : 0
+    initPlayer: function() {
+      var self = this;
+      var vimeoVideoID = Vimeo.parseUrl(this.options_.source.src).videoId;
+      //load vimeo
+      if (this.vimeo && this.vimeo.api) {
+        this.vimeo.api('unload');
+        delete this.vimeo;
+      }
+
+      self.vimeo = $f(self.iframe);
+
+      self.vimeoInfo = {
+        state: VimeoState.UNSTARTED,
+        volume: 1,
+        muted: false,
+        muteVolume: 1,
+        time: 0,
+        duration: 0,
+        buffered: 0,
+        url: self.baseUrl + self.videoId,
+        error: null
       };
 
-      // Let the user set any Vimeo parameter
-      // https://developers.google.com/youtube/player_parameters?playerVersion=HTML5#Parameters
-      // To use YouTube controls, you must use ytControls instead
-      // To use the loop or autoplay, use the video.js settings
+      this.vimeo.addEvent('ready', function(id){
+        self.onReady();
 
-      if (typeof this.options_.autohide !== 'undefined') {
-        playerVars.autohide = this.options_.autohide;
-      }
+        self.vimeo.addEvent('loadProgress', function(data, id){ self.onLoadProgress(data); });
+        self.vimeo.addEvent('playProgress', function(data, id){ self.onPlayProgress(data); });
+        self.vimeo.addEvent('play', function(id){ self.onPlay(); });
+        self.vimeo.addEvent('pause', function(id){ self.onPause(); });
+        self.vimeo.addEvent('finish', function(id){ self.onFinish(); });
+        self.vimeo.addEvent('seek', function(data, id){ self.onSeek(data); });
 
-      if (typeof this.options_['cc_load_policy'] !== 'undefined') {
-        playerVars['cc_load_policy'] = this.options_['cc_load_policy'];
-      }
-
-      if (typeof this.options_.ytControls !== 'undefined') {
-        playerVars.controls = this.options_.ytControls;
-      }
-
-      if (typeof this.options_.disablekb !== 'undefined') {
-        playerVars.disablekb = this.options_.disablekb;
-      }
-
-      if (typeof this.options_.end !== 'undefined') {
-        playerVars.end = this.options_.end;
-      }
-
-      if (typeof this.options_.color !== 'undefined') {
-        playerVars.color = this.options_.color;
-      }
-
-      if (!playerVars.controls) {
-        // Let video.js handle the fullscreen unless it is the YouTube native controls
-        playerVars.fs = 0;
-      } else if (typeof this.options_.fs !== 'undefined') {
-        playerVars.fs = this.options_.fs;
-      }
-
-      if (typeof this.options_.end !== 'undefined') {
-        playerVars.end = this.options_.end;
-      }
-
-      if (typeof this.options_.hl !== 'undefined') {
-        playerVars.hl = this.options_.hl;
-      } else if (typeof this.options_.language !== 'undefined') {
-        // Set the YouTube player on the same language than video.js
-        playerVars.hl = this.options_.language.substr(0, 2);
-      }
-
-      if (typeof this.options_['iv_load_policy'] !== 'undefined') {
-        playerVars['iv_load_policy'] = this.options_['iv_load_policy'];
-      }
-
-      if (typeof this.options_.list !== 'undefined') {
-        playerVars.list = this.options_.list;
-      } else if (this.url && typeof this.url.listId !== 'undefined') {
-        playerVars.list = this.url.listId;
-      }
-
-      if (typeof this.options_.listType !== 'undefined') {
-        playerVars.listType = this.options_.listType;
-      }
-
-      if (typeof this.options_.modestbranding !== 'undefined') {
-        playerVars.modestbranding = this.options_.modestbranding;
-      }
-
-      if (typeof this.options_.playlist !== 'undefined') {
-        playerVars.playlist = this.options_.playlist;
-      }
-
-      if (typeof this.options_.playsinline !== 'undefined') {
-        playerVars.playsinline = this.options_.playsinline;
-      }
-
-      if (typeof this.options_.rel !== 'undefined') {
-        playerVars.rel = this.options_.rel;
-      }
-
-      if (typeof this.options_.showinfo !== 'undefined') {
-        playerVars.showinfo = this.options_.showinfo;
-      }
-
-      if (typeof this.options_.start !== 'undefined') {
-        playerVars.start = this.options_.start;
-      }
-
-      if (typeof this.options_.theme !== 'undefined') {
-        playerVars.theme = this.options_.theme;
-      }
-
-      this.activeVideoId = this.url ? this.url.videoId : null;
-      this.activeList = playerVars.list;
-
-      this.ytPlayer = new YT.Player(this.options_.techId, {
-        videoId: this.activeVideoId,
-        playerVars: playerVars,
-        events: {
-          onReady: this.onPlayerReady.bind(this),
-          onPlaybackQualityChange: this.onPlayerPlaybackQualityChange.bind(this),
-          onStateChange: this.onPlayerStateChange.bind(this),
-          onError: this.onPlayerError.bind(this)
-        }
       });
+      
     },
     
-    onPlayerReady: function() {
-      this.playerReady_ = true;
+    onReady: function(){
+      this.isReady_ = true;
       this.triggerReady();
-
-      if (this.playOnReady) {
-        this.play();
+      this.trigger('loadedmetadata');
+      if (this.startMuted) {
+        this.setMuted(true);
+        this.startMuted = false;
       }
     },
     
-    onPlayerPlaybackQualityChange: function() {
-
+    onLoadProgress: function(data) {
+      var durationUpdate = !this.vimeoInfo.duration;
+      this.vimeoInfo.duration = data.duration;
+      this.vimeoInfo.buffered = data.percent;
+      this.trigger('progress');
+      if (durationUpdate) this.trigger('durationchange');
     },
-    
-    onPlayerStateChange: function(e) {
-      var state = e.data;
-
-      if (state === this.lastState) {
-        return;
-      }
-
-      switch (state) {
-        case -1:
-          this.trigger('durationchange');
-          break;
-
-        case YT.PlayerState.ENDED:
-          this.trigger('ended');
-          break;
-
-        case YT.PlayerState.PLAYING:
-          this.trigger('timeupdate');
-          this.trigger('durationchange');
-          this.trigger('playing');
-          this.trigger('play');
-
-          if (this.isSeeking) {
-            this.trigger('seeked');
-            this.isSeeking = false;
-          }
-          break;
-
-        case YT.PlayerState.PAUSED:
-          if (this.isSeeking) {
-            this.trigger('seeked');
-            this.isSeeking = false;
-            this.ytPlayer.playVideo();
-          } else {
-            this.trigger('pause');
-          }
-          break;
-
-        case YT.PlayerState.BUFFERING:
-          this.player_.trigger('timeupdate');
-          this.player_.trigger('waiting');
-          break;
-      }
-
-      this.lastState = state;
+    onPlayProgress: function(data) {
+      this.vimeoInfo.time = data.seconds;
+      this.trigger('timeupdate');
     },
-    
-    onPlayerError: function(e) {
-      this.errorNumber = e.data;
+    onPlay: function() {
+      this.vimeoInfo.state = VimeoState.PLAYING;
+      this.trigger('play');
+    },
+    onPause: function() {
+      this.vimeoInfo.state = VimeoState.PAUSED;
+      this.trigger('pause');
+    },
+    onFinish: function() {
+      this.vimeoInfo.state = VimeoState.ENDED;
+      this.trigger('ended');
+    },
+    onSeek: function(data) {
+      this.trigger('seeking');
+      this.vimeoInfo.time = data.seconds;
+      this.trigger('timeupdate');
+      this.trigger('seeked');
+    },
+    onError: function(error){
+      this.error = error;
       this.trigger('error');
-
-      this.ytPlayer.stopVideo();
-      this.ytPlayer.destroy();
-      this.ytPlayer = null;
     },
     
     error: function() {
@@ -297,9 +224,7 @@ THE SOFTWARE. */
 
       if (!this.options_.poster) {
         if (this.url.videoId) {
-          var vimeoVideoID = this.url.videoId;
-
-          $.getJSON('http://www.vimeo.com/api/v2/video/' + vimeoVideoID + '.json?callback=?', {format: "json"}, (function(_this){
+          $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', {format: "json"}, (function(_this){
             return function(data) {
               // Set the low resolution first
               _this.poster_ = data[0].thumbnail_small;
@@ -319,167 +244,50 @@ THE SOFTWARE. */
         }
       }
     },
-
-    play: function() {
-      if (!this.url || !this.url.videoId) {
-        return;
-      }
-
-      if (this.isReady_) {
-        if (this.url.listId) {
-          if (this.activeList === this.url.listId) {
-            this.ytPlayer.playVideo();
-          } else {
-            this.ytPlayer.loadPlaylist(this.url.listId);
-            this.activeList = this.url.listId;
-          }
-        } if (this.activeVideoId === this.url.videoId) {
-          this.ytPlayer.playVideo();
-        } else {
-          this.ytPlayer.loadVideoById(this.url.videoId);
-          this.activeVideoId = this.url.videoId;
-        }
-      } else {
-        this.trigger('waiting');
-        this.playOnReady = true;
-      }
-    },
     
-    pause: function() {
-      if (this.ytPlayer) {
-        this.ytPlayer.pauseVideo();
-      }
-    },
-
-    paused: function() {
-      return (this.ytPlayer) ?
-        (this.lastState !== YT.PlayerState.PLAYING && this.lastState !== YT.PlayerState.BUFFERING)
-        : true;
-    },
-
-    currentTime: function() {
-      return this.ytPlayer ? this.ytPlayer.getCurrentTime() : 0;
-    },
-
-    setCurrentTime: function(seconds) {
-      if (this.lastState === YT.PlayerState.PAUSED) {
-        this.timeBeforeSeek = this.currentTime();
-      }
-
-      this.timeBeforeSeek = this.currentTime();
-
-      this.ytPlayer.seekTo(seconds, true);
-      this.trigger('timeupdate');
-      this.trigger('seeking');
-      this.isSeeking = true;
-
-      // A seek event during pause does not return an event to trigger a seeked event,
-      // so run an interval timer to look for the currentTime to change
-      if (this.lastState === YT.PlayerState.PAUSED && this.timeBeforeSeek !== seconds) {
-        this.checkSeekedInPauseInterval = setInterval(function() {
-          if (this.lastState !== YT.PlayerState.PAUSED || !this.isSeeking) {
-            // If something changed while we were waiting for the currentTime to change,
-            //  clear the interval timer
-            clearInterval(this.checkSeekedInPauseInterval);
-          } else if (this.currentTime() !== this.timeBeforeSeek) {
-            this.trigger('timeupdate');
-            this.trigger('seeked');
-            this.isSeeking = false;
-            clearInterval(this.checkSeekedInPauseInterval);
-          }
-
-          this.play();
-        }.bind(this), 250);
-      }
-    },
-
-    playbackRate: function() {
-      return this.ytPlayer ? this.ytPlayer.getPlaybackRate() : 1;
-    },
-
-    setPlaybackRate: function(suggestedRate) {
-      if (!this.ytPlayer) {
-        return;
-      }
-
-      this.ytPlayer.setPlaybackRate(suggestedRate);
-      this.trigger('ratechange');
-    },
-
-    duration: function() {
-      return this.ytPlayer ? this.ytPlayer.getDuration() : 0;
-    },
-
-    currentSrc: function() {
-      return this.source;
-    },
-
-    ended: function() {
-      return this.ytPlayer ? (this.lastState === YT.PlayerState.ENDED) : false;
-    },
-
-    volume: function() {
-      return this.ytPlayer ? this.ytPlayer.getVolume() / 100.0 : 1;
-    },
-
-    setVolume: function(percentAsDecimal) {
-      if (!this.ytPlayer) {
-        return;
-      }
-
-      this.ytPlayer.setVolume(percentAsDecimal * 100.0);
-      this.setTimeout( function(){
-        this.trigger('volumechange');
-      }, 50);
-
-    },
-
-    muted: function() {
-      return this.ytPlayer ? this.ytPlayer.isMuted() : false;
-    },
-
-    setMuted: function(mute) {
-      if (!this.ytPlayer) {
-        return;
-      }
-      else{
-        this.muted(true);
-      }
-
-      if (mute) {
-        this.ytPlayer.mute();
-      } else {
-        this.ytPlayer.unMute();
-      }
-      this.setTimeout( function(){
-        this.trigger('volumechange');
-      }, 50);
-    },
-
-    buffered: function() {
-      if(!this.ytPlayer || !this.ytPlayer.getVideoLoadedFraction) {
-        return {
-          length: 0,
-          start: function() {
-            throw new Error('This TimeRanges object is empty');
-          },
-          end: function() {
-            throw new Error('This TimeRanges object is empty');
-          }
-        };
-      }
-
-      var end = this.ytPlayer.getVideoLoadedFraction() * this.ytPlayer.getDuration();
-
-      return {
-        length: 1,
-        start: function() { return 0; },
-        end: function() { return end; }
-      };
-    },
-
     supportsFullScreen: function() {
       return true;
+    },
+    
+    //TRIGGER
+    load : function(){},
+    play : function(){ this.vimeo.api('play'); },
+    pause : function(){ this.vimeo.api('pause'); },
+    paused : function(){
+      return this.vimeoInfo.state !== VimeoState.PLAYING &&
+             this.vimeoInfo.state !== VimeoState.BUFFERING;
+    },
+
+    currentTime : function(){ return this.vimeoInfo.time || 0; },
+
+    setCurrentTime :function(seconds){
+      this.vimeo.api('seekTo', seconds);
+      this.player_.trigger('timeupdate');
+    },
+
+    duration :function(){ return this.vimeoInfo.duration || 0; },
+    buffered :function(){ return videojs.createTimeRange(0, (this.vimeoInfo.buffered*this.vimeoInfo.duration) || 0); },
+
+    volume :function() { return (this.vimeoInfo.muted)? this.vimeoInfo.muteVolume : this.vimeoInfo.volume; },
+    setVolume :function(percentAsDecimal){
+      this.vimeo.api('setvolume', percentAsDecimal);
+      this.vimeoInfo.volume = percentAsDecimal;
+      this.player_.trigger('volumechange');
+    },
+    currentSrc :function() {
+      return this.el_.src;
+    },
+    muted :function() { return this.vimeoInfo.muted || false; },
+    setMuted :function(muted) {
+      if (muted) {
+        this.vimeoInfo.muteVolume = this.vimeoInfo.volume;
+        this.setVolume(0);
+      } else {
+        this.setVolume(this.vimeoInfo.muteVolume);
+      }
+
+      this.vimeoInfo.muted = muted;
+      this.player_.trigger('volumechange');
     },
 
     // Tries to get the highest resolution thumbnail available for the video
@@ -488,7 +296,7 @@ THE SOFTWARE. */
 
       try {
         
-        $.getJSON('http://www.vimeo.com/api/v2/video/' + this.url.videoId + '.json?callback=?', {format: "json"}, (function(_uri){
+        $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', {format: "json"}, (function(_uri){
           return function(data) {
             // Set the low resolution first
             _uri = data[0].thumbnail_large;
@@ -497,7 +305,7 @@ THE SOFTWARE. */
         
         var image = new Image();
         image.onload = function(){
-          // Onload may still be called if YouTube returns the 120x90 error thumbnail
+          // Onload thumbnail
           if('naturalHeight' in this){
             if(this.naturalHeight <= 90 || this.naturalWidth <= 120) {
               this.onerror();
@@ -572,17 +380,284 @@ THE SOFTWARE. */
 
   Vimeo.apiReadyQueue = [];
 
-  window.onVimeoIframeAPIReady = function() {
+  var vimeoIframeAPIReady = function() {
     Vimeo.isApiReady = true;
 
     for (var i = 0; i < Vimeo.apiReadyQueue.length; ++i) {
-      Vimeo.apiReadyQueue[i].initYTPlayer();
+      Vimeo.apiReadyQueue[i].initPlayer();
     }
   };
 
-  loadApi();
+  vimeoIframeAPIReady();
+  //loadApi();
   injectCss();
 
   videojs.registerTech('Vimeo', Vimeo);
+  
+  
+  
+  // Froogaloop API -------------------------------------------------------------
+
+  // From https://github.com/vimeo/player-api/blob/master/javascript/froogaloop.js
+  // Init style shamelessly stolen from jQuery http://jquery.com
+  var Froogaloop = (function(){
+      // Define a local copy of Froogaloop
+      function Froogaloop(iframe) {
+          // The Froogaloop object is actually just the init constructor
+          return new Froogaloop.fn.init(iframe);
+      }
+
+      var eventCallbacks = {},
+          hasWindowEvent = false,
+          isReady = false,
+          slice = Array.prototype.slice,
+          playerOrigin = '*';
+
+      Froogaloop.fn = Froogaloop.prototype = {
+          element: null,
+
+          init: function(iframe) {
+              if (typeof iframe === "string") {
+                  iframe = document.getElementById(iframe);
+              }
+
+              this.element = iframe;
+
+              return this;
+          },
+
+          /*
+           * Calls a function to act upon the player.
+           *
+           * @param {string} method The name of the Javascript API method to call. Eg: 'play'.
+           * @param {Array|Function} valueOrCallback params Array of parameters to pass when calling an API method
+           *                                or callback function when the method returns a value.
+           */
+          api: function(method, valueOrCallback) {
+              if (!this.element || !method) {
+                  return false;
+              }
+
+              var self = this,
+                  element = self.element,
+                  target_id = element.id !== '' ? element.id : null,
+                  params = !isFunction(valueOrCallback) ? valueOrCallback : null,
+                  callback = isFunction(valueOrCallback) ? valueOrCallback : null;
+
+              // Store the callback for get functions
+              if (callback) {
+                  storeCallback(method, callback, target_id);
+              }
+
+              postMessage(method, params, element);
+              return self;
+          },
+
+          /*
+           * Registers an event listener and a callback function that gets called when the event fires.
+           *
+           * @param eventName (String): Name of the event to listen for.
+           * @param callback (Function): Function that should be called when the event fires.
+           */
+          addEvent: function(eventName, callback) {
+              if (!this.element) {
+                  return false;
+              }
+
+              var self = this,
+                  element = self.element,
+                  target_id = element.id !== '' ? element.id : null;
+
+
+              storeCallback(eventName, callback, target_id);
+
+              // The ready event is not registered via postMessage. It fires regardless.
+              if (eventName != 'ready') {
+                  postMessage('addEventListener', eventName, element);
+              }
+              else if (eventName == 'ready' && isReady) {
+                  callback.call(null, target_id);
+              }
+
+              return self;
+          },
+
+          /*
+           * Unregisters an event listener that gets called when the event fires.
+           *
+           * @param eventName (String): Name of the event to stop listening for.
+           */
+          removeEvent: function(eventName) {
+              if (!this.element) {
+                  return false;
+              }
+
+              var self = this,
+                  element = self.element,
+                  target_id = element.id !== '' ? element.id : null,
+                  removed = removeCallback(eventName, target_id);
+
+              // The ready event is not registered
+              if (eventName != 'ready' && removed) {
+                  postMessage('removeEventListener', eventName, element);
+              }
+          }
+      };
+
+      /**
+       * Handles posting a message to the parent window.
+       *
+       * @param method (String): name of the method to call inside the player. For api calls
+       * this is the name of the api method (api_play or api_pause) while for events this method
+       * is api_addEventListener.
+       * @param params (Object or Array): List of parameters to submit to the method. Can be either
+       * a single param or an array list of parameters.
+       * @param target (HTMLElement): Target iframe to post the message to.
+       */
+      function postMessage(method, params, target) {
+          if (!target.contentWindow.postMessage) {
+              return false;
+          }
+
+          var data = JSON.stringify({
+              method: method,
+              value: params
+          });
+
+          target.contentWindow.postMessage(data, playerOrigin);
+      }
+
+      /**
+       * Event that fires whenever the window receives a message from its parent
+       * via window.postMessage.
+       */
+      function onMessageReceived(event) {
+          var data, method;
+
+          try {
+              data = JSON.parse(event.data);
+              method = data.event || data.method;
+          }
+          catch(e)  {
+              //fail silently... like a ninja!
+          }
+
+          if (method == 'ready' && !isReady) {
+              isReady = true;
+          }
+
+          // Handles messages from the vimeo player only
+          if (!(/^https?:\/\/player.vimeo.com/).test(event.origin)) {
+              return false;
+          }
+
+          if (playerOrigin === '*') {
+              playerOrigin = event.origin;
+          }
+
+          var value = data.value,
+              eventData = data.data,
+              target_id = target_id === '' ? null : data.player_id,
+
+              callback = getCallback(method, target_id),
+              params = [];
+
+          if (!callback) {
+              return false;
+          }
+
+          if (value !== undefined) {
+              params.push(value);
+          }
+
+          if (eventData) {
+              params.push(eventData);
+          }
+
+          if (target_id) {
+              params.push(target_id);
+          }
+
+          return params.length > 0 ? callback.apply(null, params) : callback.call();
+      }
+
+
+      /**
+       * Stores submitted callbacks for each iframe being tracked and each
+       * event for that iframe.
+       *
+       * @param eventName (String): Name of the event. Eg. api_onPlay
+       * @param callback (Function): Function that should get executed when the
+       * event is fired.
+       * @param target_id (String) [Optional]: If handling more than one iframe then
+       * it stores the different callbacks for different iframes based on the iframe's
+       * id.
+       */
+      function storeCallback(eventName, callback, target_id) {
+          if (target_id) {
+              if (!eventCallbacks[target_id]) {
+                  eventCallbacks[target_id] = {};
+              }
+              eventCallbacks[target_id][eventName] = callback;
+          }
+          else {
+              eventCallbacks[eventName] = callback;
+          }
+      }
+
+      /**
+       * Retrieves stored callbacks.
+       */
+      function getCallback(eventName, target_id) {
+          if (target_id && eventCallbacks[target_id]) {
+              return eventCallbacks[target_id][eventName];
+          }
+          else if (eventCallbacks[eventName]) {
+              return eventCallbacks[eventName];
+          }
+      }
+
+      function removeCallback(eventName, target_id) {
+          if (target_id && eventCallbacks[target_id]) {
+              if (!eventCallbacks[target_id][eventName]) {
+                  return false;
+              }
+              eventCallbacks[target_id][eventName] = null;
+          }
+          else {
+              if (!eventCallbacks[eventName]) {
+                  return false;
+              }
+              eventCallbacks[eventName] = null;
+          }
+
+          return true;
+      }
+
+      function isFunction(obj) {
+          return !!(obj && obj.constructor && obj.call && obj.apply);
+      }
+
+      function isArray(obj) {
+          return toString.call(obj) === '[object Array]';
+      }
+
+      // Give the init function the Froogaloop prototype for later instantiation
+      Froogaloop.fn.init.prototype = Froogaloop.fn;
+
+      // Listens for the message event.
+      // W3C
+      if (window.addEventListener) {
+          window.addEventListener('message', onMessageReceived, false);
+      }
+      // IE
+      else {
+          window.attachEvent('onmessage', onMessageReceived);
+      }
+
+      // Expose froogaloop to the global object
+      return (window.Froogaloop = window.$f = Froogaloop);
+
+  })();
 })();
 
