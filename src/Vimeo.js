@@ -351,19 +351,12 @@ THE SOFTWARE. */
     return result;
   };
 
-  function loadApi() {
-    var tag = document.createElement('script');
-    tag.src = 'https://f.vimeocdn.com/js/froogaloop2.min.js';
-    var firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-  }
-
   function injectCss() {
     var css = // iframe blocker to catch mouse events
               '.vjs-vimeo .vjs-iframe-blocker { display: none; }' +
               '.vjs-vimeo.vjs-user-inactive .vjs-iframe-blocker { display: block; }' +
               '.vjs-vimeo .vjs-poster { background-size: cover; }' +
-              '.video-js { height:100%; }' +
+              '.vjs-vimeo { height:100%; }' +
               '.vimeoplayer { width:100%; height:180%; position:absolute; left:0; top:-40%; }';
 
     var head = document.head || document.getElementsByTagName('head')[0];
@@ -384,6 +377,7 @@ THE SOFTWARE. */
 
   var vimeoIframeAPIReady = function() {
     Vimeo.isApiReady = true;
+    injectCss();
 
     for (var i = 0; i < Vimeo.apiReadyQueue.length; ++i) {
       Vimeo.apiReadyQueue[i].initPlayer();
@@ -391,8 +385,6 @@ THE SOFTWARE. */
   };
 
   vimeoIframeAPIReady();
-  //loadApi();
-  injectCss();
 
   videojs.registerTech('Vimeo', Vimeo);
   
