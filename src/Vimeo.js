@@ -15,9 +15,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
-(function() {
+(function (root, factory) {
+  if(typeof define === 'function' && define.amd) {
+    define(['video.js'], function(videojs){
+      return (root.Youtube = factory(videojs));
+    });
+  } else if(typeof module === 'object' && module.exports) {
+    module.exports = (root.Youtube = factory(require('video.js')));
+  } else {
+    root.Youtube = factory(root.videojs);
+  }
+}(this, function(videojs) {
   'use strict';
-  
+
   var VimeoState = {
     UNSTARTED: -1,
     ENDED: 0,
@@ -39,20 +49,20 @@ THE SOFTWARE. */
       setTimeout(function() {
         this.el_.parentNode.className += ' vjs-vimeo';
       }.bind(this));
-      
+
     },
-    
+
     dispose: function() {
       this.el_.parentNode.className = this.el_.parentNode.className.replace(' vjs-vimeo', '');
     },
-    
+
     createEl: function() {
       this.vimeo = {};
       this.vimeoInfo = {};
       this.baseUrl = 'https://player.vimeo.com/video/';
       this.baseApiUrl = 'http://www.vimeo.com/api/v2/video/';
       this.videoId = Vimeo.parseUrl(this.options_.source.src).videoId;
-      
+
       this.iframe = document.createElement('iframe');
       this.iframe.setAttribute('id', this.options_.techId);
       this.iframe.setAttribute('title', 'Vimeo Video Player');
@@ -89,7 +99,7 @@ THE SOFTWARE. */
       } else {
         Vimeo.apiReadyQueue.push(this);
       }
-      
+
       if(this.options_.poster == "") {
         $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', {format: "json"}, (function(_this){
           return function(data) {
@@ -101,7 +111,7 @@ THE SOFTWARE. */
 
       return divWrapper;
     },
-    
+
     initPlayer: function() {
       var self = this;
       var vimeoVideoID = Vimeo.parseUrl(this.options_.source.src).videoId;
@@ -136,9 +146,9 @@ THE SOFTWARE. */
         self.vimeo.addEvent('seek', function(data, id){ self.onSeek(data); });
 
       });
-      
+
     },
-    
+
     onReady: function(){
       this.isReady_ = true;
       this.triggerReady();
@@ -148,7 +158,7 @@ THE SOFTWARE. */
         this.startMuted = false;
       }
     },
-    
+
     onLoadProgress: function(data) {
       var durationUpdate = !this.vimeoInfo.duration;
       this.vimeoInfo.duration = data.duration;
@@ -182,7 +192,7 @@ THE SOFTWARE. */
       this.error = error;
       this.trigger('error');
     },
-    
+
     error: function() {
       switch (this.errorNumber) {
         case 2:
@@ -201,7 +211,7 @@ THE SOFTWARE. */
 
       return { code: 'Vimeo unknown error (' + this.errorNumber + ')' };
     },
-    
+
     src: function() {
       return this.source;
     },
@@ -244,11 +254,11 @@ THE SOFTWARE. */
         }
       }
     },
-    
+
     supportsFullScreen: function() {
       return true;
     },
-    
+
     //TRIGGER
     load : function(){},
     play : function(){ this.vimeo.api('play'); },
@@ -295,14 +305,14 @@ THE SOFTWARE. */
       var uri = '';
 
       try {
-        
+
         $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', {format: "json"}, (function(_uri){
           return function(data) {
             // Set the low resolution first
             _uri = data[0].thumbnail_large;
           };
         })(uri));
-        
+
         var image = new Image();
         image.onload = function(){
           // Onload thumbnail
@@ -387,9 +397,9 @@ THE SOFTWARE. */
   vimeoIframeAPIReady();
 
   videojs.registerTech('Vimeo', Vimeo);
-  
-  
-  
+
+
+
   // Froogaloop API -------------------------------------------------------------
 
   // From https://github.com/vimeo/player-api/blob/master/javascript/froogaloop.js
@@ -653,5 +663,4 @@ THE SOFTWARE. */
       return (window.Froogaloop = window.$f = Froogaloop);
 
   })();
-})();
-
+}));
