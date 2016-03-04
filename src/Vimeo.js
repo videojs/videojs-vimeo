@@ -18,12 +18,12 @@ THE SOFTWARE. */
 (function (root, factory) {
   if(typeof define === 'function' && define.amd) {
     define(['video.js'], function(videojs){
-      return (root.Youtube = factory(videojs));
+      return (root.Vimeo = factory(videojs));
     });
   } else if(typeof module === 'object' && module.exports) {
-    module.exports = (root.Youtube = factory(require('video.js')));
+    module.exports = (root.Vimeo = factory(require('video.js')));
   } else {
-    root.Youtube = factory(root.videojs);
+    root.Vimeo = factory(root.videojs);
   }
 }(this, function(videojs) {
   'use strict';
