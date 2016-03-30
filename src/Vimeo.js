@@ -100,14 +100,18 @@ THE SOFTWARE. */
         Vimeo.apiReadyQueue.push(this);
       }
 
-      if(this.options_.poster == "") {
-        $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', {format: "json"}, (function(_this){
-          return function(data) {
-            // Set the low resolution first
+      $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', {format: "json"}, (function(_this){
+        return function(data) {
+          // Set the duration of the video, since it must be manually tracked with vimeo.
+          _this.vimeoInfo.duration = data[0].duration;
+          _this.player_.duration(_this.vimeoInfo.duration);
+
+          // Set the low resolution first
+          if(_this.options_.poster == "") {
             _this.setPoster(data[0].thumbnail_large);
-          };
-        })(this));
-      }
+          }
+        };
+      })(this));
 
       return divWrapper;
     },
