@@ -17,7 +17,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 (function (root, factory) {
   if(typeof define === 'function' && define.amd) {
-    define(['video.js'], function(videojs){
+    define(['videojs'], function(videojs){
       return (root.Vimeo = factory(videojs));
     });
   } else if(typeof module === 'object' && module.exports) {
