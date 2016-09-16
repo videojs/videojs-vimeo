@@ -1,6 +1,6 @@
 {
   "name": "videojs-vimeo",
-  "version": "2.0.0",
+  "version": "2.0.4",
   "main": ["src/Vimeo.js"],
   "description": "Allows you to use Vimeo URL as source with Video.js.",
   "license": "MIT",
