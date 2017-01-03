@@ -60,7 +60,7 @@ THE SOFTWARE. */
       this.vimeo = {};
       this.vimeoInfo = {};
       this.baseUrl = 'https://player.vimeo.com/video/';
-      this.baseApiUrl = 'http://www.vimeo.com/api/v2/video/';
+      this.baseApiUrl = '//www.vimeo.com/api/v2/video/';
       this.videoId = Vimeo.parseUrl(this.options_.source.src).videoId;
 
       this.iframe = document.createElement('iframe');
