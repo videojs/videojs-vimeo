@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="../node_modules/video.js/dist/video-js.min.css" />
+</head>
+<body>
+    <video id="vid2" class="video-js vjs-default-skin" controls autoplay width="640" height="264" data-video-url="https://vimeo.com/153979733">
+    </video>
+
+    <script src="../node_modules/jquery/dist/jquery.js"></script>
+    <script src="../node_modules/video.js/dist/video.min.js"></script>
+    <script src="../src/Vimeo.js"></script>
+    <script>
+        $(document).ready(function(){
+            $elm = $('#vid2');
+            videojs("vid2", {
+                fluid: true,
+                techOrder: [ 'vimeo' ],
+                controls : true,
+                sources  : [
+                    {
+                        type: "video/vimeo",
+                        src : $elm.attr('data-video-url')
+                    }
+                ]
+            }, function() {
+            });
+        });
+    </script>
+</body>
+</html>
