@@ -4,6 +4,7 @@
   "description": "Allows you to use Vimeo URL as source with Video.js.",
   "main": "src/vimeo.js",
   "scripts": {
+    "start": "lite-server -c ./bs-config.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -21,8 +22,10 @@
     "url": "https://github.com/eXon/videojs-vimeo/issues"
   },
   "homepage": "https://github.com/eXon/videojs-vimeo#readme",
-  "dependencies": {
+  "devDependencies": {
+    "@vimeo/player": "^2.0.1",
     "jquery": "^2.1.1",
+    "lite-server": "^2.2.2",
     "video.js": "^5.15.1"
   }
 }

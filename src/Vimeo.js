@@ -77,10 +77,13 @@ THE SOFTWARE. */
       this.iframe.setAttribute('mozallowfullscreen', '0');
       this.iframe.setAttribute('allowFullScreen', '0');
 
+      var divFrame = document.createElement('div');
+      divFrame.setAttribute('class', 'vimeoFrame');
+      divFrame.appendChild(this.iframe);
+
       var divWrapper = document.createElement('div');
-      divWrapper.setAttribute('style', 'margin:0 auto;width:100%;height:0;position:absolute;padding-top: 40%;overflow: hidden;');
-      divWrapper.setAttribute('class', 'vimeoFrame');
-      divWrapper.appendChild(this.iframe);
+      divWrapper.setAttribute('class', 'vjs-vimeo-wrapper');
+      divWrapper.appendChild(divFrame);
 
       if (!_isOnMobile && !this.options_.ytControls) {
         var divBlocker = document.createElement('div');
@@ -365,12 +368,12 @@ THE SOFTWARE. */
 
   function injectCss() {
     var css = // iframe blocker to catch mouse events
-      '.vjs-vimeo .vjs-iframe-blocker { display: none; }' +
-      '.vjs-vimeo.vjs-user-inactive .vjs-iframe-blocker { display: block; }' +
-      '.vjs-vimeo .vjs-poster { background-size: cover; }' +
-      '.vjs-vimeo { height: 264px; width: 640px; }' +
-      '.vjs-vimeo.vjs-fluid > .vimeoFrame { height: 100% !important; margin-top: -56.25% !important; }' +
-      '.vimeoplayer { width:100%; height:180%; position:absolute; left:0; top:-40%; }';
+      '.video-js.vjs-fluid { height: auto;}' +
+      '.vid2-dimensions.vjs-fluid { padding-top: 0; }' +
+      '.vjs-vimeo { position: relative; max-width: 100%; min-width: 200px; height: 100%; direction: ltr; }' +
+      '.vjs-vimeo-wrapper { padding-bottom: 56.25%; height: 0;border-radius: inherit; overflow: hidden; z-index: 0; }' +
+      '.vimeoFrame { position: relative; padding-bottom: 200%; transform: translateY(-35.95%); }' + 
+      '.vimeoplayer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }';
 
     var head = document.head || document.getElementsByTagName('head')[0];
 
