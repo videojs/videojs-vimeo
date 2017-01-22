@@ -104,7 +104,7 @@ THE SOFTWARE. */
         Vimeo.apiReadyQueue.push(this);
       }
 
-      if (this.options_.poster == "") {
+      if (this.options_.poster === "") {
         $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', { format: "json" }, (function (_this) {
           return function (data) {
             // Set the low resolution first
