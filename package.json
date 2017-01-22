@@ -2,10 +2,12 @@
   "name": "videojs-vimeo",
   "version": "2.1.0",
   "description": "Allows you to use Vimeo URL as source with Video.js.",
-  "main": "src/vimeo.js",
+  "main": "dist/vimeo.js",
   "scripts": {
     "start": "lite-server -c ./bs-config.json",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "npm run compile",
+    "compile": "rm -rf dist && uglifyjs --compress --mangle -- src/Vimeo.js"
   },
   "repository": {
     "type": "git",
@@ -26,6 +28,7 @@
     "@vimeo/player": "^2.0.1",
     "jquery": "^2.1.1",
     "lite-server": "^2.2.2",
+    "uglify-js": "^2.7.5",
     "video.js": "^5.15.1"
   }
 }

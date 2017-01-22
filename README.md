@@ -76,3 +76,4 @@ Thanks to Steve Heffernan for the amazing Video.js and to John Hurliman for the 
 
 - Added with npm package dependency
 - Fixed bug: Video displayed outside of player frame #70
+- Fixed bug: css issue
