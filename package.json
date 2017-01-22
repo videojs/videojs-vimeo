@@ -1,10 +1,15 @@
 {
   "name": "videojs-vimeo",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "Allows you to use Vimeo URL as source with Video.js.",
-  "main": "src/Vimeo.js",
+  "main": "dist/vimeo.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm run build && lite-server -c ./bs-config.json",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "mkdirp dist && cp src/Vimeo.js dist/Vimeo.js && uglifyjs src/Vimeo.js -o dist/Vimeo.min.js",
+    "lint": "jshint .",
+    "validate": "npm ls",
+    "version": "npm run build && git add -f dist"
   },
   "repository": {
     "type": "git",
@@ -20,5 +25,14 @@
   "bugs": {
     "url": "https://github.com/eXon/videojs-vimeo/issues"
   },
-  "homepage": "https://github.com/eXon/videojs-vimeo#readme"
+  "homepage": "https://github.com/eXon/videojs-vimeo#readme",
+  "devDependencies": {
+    "@vimeo/player": "^2.0.1",
+    "jquery": "^2.1.1",
+    "jshint": "^2.9.4",
+    "lite-server": "^2.2.2",
+    "mkdirp": "^0.5.1",
+    "uglify-js": "^2.7.5",
+    "video.js": "^5.15.1"
+  }
 }
