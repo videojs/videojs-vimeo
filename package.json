@@ -6,7 +6,7 @@
   },
   "version": "3.0.0",
   "description": "Videojs Vimeo plugin using the official Vimeo Player API.",
-  "main": "es5/vimeo.js",
+  "main": "es5/Vimeo.js",
   "scripts": {
     "prebuild": "npm run clean",
     "build": "npm-run-all -p build:*",
