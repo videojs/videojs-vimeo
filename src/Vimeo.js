@@ -48,6 +48,10 @@ class Vimeo extends Tech {
     if(this.options_.loop) {
       vimeoOptions.loop = this.options_.loop;
     }
+    if(this.options_.color) {
+      // vimeo is the only API on earth to reject hex color with leading #
+      vimeoOptions.color = this.options_.color.replace(/^#/, '');
+    }
 
     this._player = new VimeoPlayer(this.el(), vimeoOptions);
     this.initVimeoState();
