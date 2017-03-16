@@ -48,6 +48,22 @@ THE SOFTWARE. */
       // Parent is not set yet so we have to wait a tick
       setTimeout(function() {
         this.el_.parentNode.className += ' vjs-vimeo';
+
+        if (Vimeo.isApiReady) {
+          this.initPlayer();
+        } else {
+          Vimeo.apiReadyQueue.push(this);
+        }
+
+        if(this.options_.poster == "") {
+          $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', {format: "json"}, (function(_this){
+            return function(data) {
+              // Set the low resolution first
+              _this.setPoster(data[0].thumbnail_large);
+            };
+          })(this));
+        }
+
       }.bind(this));
 
     },
@@ -63,6 +79,11 @@ THE SOFTWARE. */
       this.baseApiUrl = 'http://www.vimeo.com/api/v2/video/';
       this.videoId = Vimeo.parseUrl(this.options_.source.src).videoId;
 
+      var wrapperId = 'vimeo_wrapper_' + this.options_.playerId;
+      var oldWrapper = document.getElementById (wrapperId);
+      if (!!oldWrapper)
+        oldWrapper.parentNode.removeChild (oldWrapper);
+
       this.iframe = document.createElement('iframe');
       this.iframe.setAttribute('id', this.options_.techId);
       this.iframe.setAttribute('title', 'Vimeo Video Player');
@@ -77,11 +98,12 @@ THE SOFTWARE. */
       this.iframe.setAttribute('allowFullScreen', '0');
 
       var divWrapper = document.createElement('div');
-      divWrapper.setAttribute('style', 'margin:0 auto;padding-bottom:56.25%;width:100%;height:0;position:relative;overflow:hidden;');
+      divWrapper.setAttribute('style', 'padding-bottom: ' + document.getElementById(this.options_.playerId).offsetHeight + 'px;');
       divWrapper.setAttribute('class', 'vimeoFrame');
+      divWrapper.setAttribute('id', wrapperId);
       divWrapper.appendChild(this.iframe);
 
-      if (!_isOnMobile && !this.options_.ytControls) {
+      /*if (!_isOnMobile && !this.options_.ytControls) {
         var divBlocker = document.createElement('div');
         divBlocker.setAttribute('class', 'vjs-iframe-blocker');
         divBlocker.setAttribute('style', 'position:absolute;top:0;left:0;width:100%;height:100%');
@@ -92,29 +114,13 @@ THE SOFTWARE. */
         }.bind(this);
 
         divWrapper.appendChild(divBlocker);
-      }
-
-      if (Vimeo.isApiReady) {
-        this.initPlayer();
-      } else {
-        Vimeo.apiReadyQueue.push(this);
-      }
-
-      if(this.options_.poster == "") {
-        $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', {format: "json"}, (function(_this){
-          return function(data) {
-            // Set the low resolution first
-            _this.setPoster(data[0].thumbnail_large);
-          };
-        })(this));
-      }
+      }*/
 
       return divWrapper;
     },
 
     initPlayer: function() {
       var self = this;
-      var vimeoVideoID = Vimeo.parseUrl(this.options_.source.src).videoId;
       //load vimeo
       if (this.vimeo && this.vimeo.api) {
         this.vimeo.api('unload');
@@ -134,7 +140,6 @@ THE SOFTWARE. */
         url: self.baseUrl + self.videoId,
         error: null
       };
-
       this.vimeo.addEvent('ready', function(id){
         self.onReady();
 
@@ -150,25 +155,30 @@ THE SOFTWARE. */
     },
 
     onReady: function(){
-      this.isReady_ = true;
       this.triggerReady();
       this.trigger('loadedmetadata');
       if (this.startMuted) {
         this.setMuted(true);
         this.startMuted = false;
       }
+      if (this.playOnReady) {
+        this.play();
+      }
     },
 
     onLoadProgress: function(data) {
-      var durationUpdate = !this.vimeoInfo.duration;
+      var durationUpdate = this.vimeoInfo.duration != data.duration;
       this.vimeoInfo.duration = data.duration;
       this.vimeoInfo.buffered = data.percent;
       this.trigger('progress');
       if (durationUpdate) this.trigger('durationchange');
     },
     onPlayProgress: function(data) {
+      var durationUpdate = this.vimeoInfo.duration != data.duration;
       this.vimeoInfo.time = data.seconds;
+      this.vimeoInfo.duration = data.duration;
       this.trigger('timeupdate');
+      if (durationUpdate) this.trigger('durationchange');
     },
     onPlay: function() {
       this.vimeoInfo.state = VimeoState.PLAYING;
@@ -212,8 +222,11 @@ THE SOFTWARE. */
       return { code: 'Vimeo unknown error (' + this.errorNumber + ')' };
     },
 
-    src: function() {
-      return this.source;
+    src: function(arg) {
+      if (arg)
+        this.setSrc (arg);
+      else
+        return this.source;
     },
 
     poster: function() {
@@ -225,32 +238,36 @@ THE SOFTWARE. */
     },
 
     setSrc: function(source) {
-      if (!source || !source.src) {
+      if (!source) {
         return;
       }
-
       this.source = source;
-      this.url = Vimeo.parseUrl(source.src);
-
-      if (!this.options_.poster) {
-        if (this.url.videoId) {
-          $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', {format: "json"}, (function(_this){
-            return function(data) {
-              // Set the low resolution first
-              _this.poster_ = data[0].thumbnail_small;
-            };
-          })(this));
-
-          // Check if their is a high res
-          this.checkHighResPoster();
-        }
-      }
+      this.url = Vimeo.parseUrl(source);
+      this.videoId = this.url.videoId;
+      this.iframe.setAttribute('src', this.baseUrl + this.videoId + '?api=1&player_id=' + this.options_.techId);
+      this.vimeoInfo.url = this.baseUrl + this.videoId;
 
       if (this.options_.autoplay && !_isOnMobile) {
         if (this.isReady_) {
           this.play();
         } else {
           this.playOnReady = true;
+        }
+      }
+      else
+      {
+        if (!this.options_.poster) {
+          if (this.url.videoId) {
+            $.getJSON(this.baseApiUrl + this.videoId + '.json?callback=?', {format: "json"}, (function(_this){
+              return function(data) {
+                // Set the low resolution first
+                _this.poster_ = data[0].thumbnail_small;
+              };
+            })(this));
+
+            // Check if their is a high res
+            this.checkHighResPoster();
+          }
         }
       }
     },
@@ -261,11 +278,22 @@ THE SOFTWARE. */
 
     //TRIGGER
     load : function(){},
-    play : function(){ this.vimeo.api('play'); },
+    play : function()
+    {
+      if (this.isReady_)
+      {
+        this.vimeo.api('play');
+      }
+      else
+      {
+        this.trigger('waiting');
+        this.playOnReady = true;
+      }
+    },
     pause : function(){ this.vimeo.api('pause'); },
     paused : function(){
       return this.vimeoInfo.state !== VimeoState.PLAYING &&
-             this.vimeoInfo.state !== VimeoState.BUFFERING;
+        this.vimeoInfo.state !== VimeoState.BUFFERING;
     },
 
     currentTime : function(){ return this.vimeoInfo.time || 0; },
@@ -366,8 +394,9 @@ THE SOFTWARE. */
               '.vjs-vimeo .vjs-iframe-blocker { display: none; }' +
               '.vjs-vimeo.vjs-user-inactive .vjs-iframe-blocker { display: block; }' +
               '.vjs-vimeo .vjs-poster { background-size: cover; }' +
-              '.vjs-vimeo { height:100%; }' +
-              '.vimeoplayer { width:100%; height:180%; position:absolute; left:0; top:-40%; }';
+              //'.vjs-vimeo { height:100%; }' +
+              '.vimeoplayer { width:100%; height:180%; position:absolute; left:0; top:-40%; }' +
+              '.vimeoFrame { margin:0 auto;padding-bottom:56.25%;width:100%;height:0;position:absolute;overflow:hidden; }';
 
     var head = document.head || document.getElementsByTagName('head')[0];
 
@@ -404,6 +433,7 @@ THE SOFTWARE. */
 
   // From https://github.com/vimeo/player-api/blob/master/javascript/froogaloop.js
   // Init style shamelessly stolen from jQuery http://jquery.com
+          
   var Froogaloop = (function(){
       // Define a local copy of Froogaloop
       function Froogaloop(iframe) {
@@ -479,9 +509,9 @@ THE SOFTWARE. */
               if (eventName != 'ready') {
                   postMessage('addEventListener', eventName, element);
               }
-              else if (eventName == 'ready' && isReady) {
+              /*else if (eventName == 'ready' && isReady) {
                   callback.call(null, target_id);
-              }
+              }*/
 
               return self;
           },
