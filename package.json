@@ -1,10 +1,6 @@
 {
   "name": "videojs-vimeo",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/didacte/videojs-vimeo.git"
-  },
-  "version": "3.0.0",
+  "version": "2.0.2",
   "description": "Videojs Vimeo plugin using the official Vimeo Player API.",
   "main": "es5/Vimeo.js",
   "scripts": {
@@ -103,5 +99,16 @@
     "ghooks": {
       "pre-push": "npm run lint"
     }
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/videojs/videojs-vimeo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/videojs/videojs-vimeo/issues"
+  },
+  "homepage": "https://github.com/videojs/videojs-vimeo#readme"
 }
