@@ -72,7 +72,7 @@
     "babelify": "^7.3.0",
     "bannerize": "^1.0.2",
     "bluebird": "^3.2.2",
-    "browserify": "^12.0.2",
+    "browserify": "^14.4.0",
     "browserify-shim": "^3.8.12",
     "budo": "^8.0.4",
     "bundle-collapser": "^1.2.1",
