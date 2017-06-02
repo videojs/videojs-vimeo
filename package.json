@@ -89,7 +89,7 @@
     "lodash": "^4.11.2",
     "mkdirp": "^0.5.1",
     "npm-run-all": "^1.5.1",
-    "qunitjs": "^1.21.0",
+    "qunitjs": "^2.3.3",
     "rimraf": "^2.5.1",
     "sinon": "~1.14.0",
     "uglify-js": "^2.6.1",
