@@ -61,7 +61,7 @@
     "src/"
   ],
   "dependencies": {
-    "@vimeo/player": "^2.0.1",
+    "@vimeo/player": "^2.0.2",
     "browserify-versionify": "^1.0.6",
     "video.js": "^5.16"
   },
