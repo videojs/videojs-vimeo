@@ -96,7 +96,10 @@ class Vimeo extends Tech {
         this.trigger(e);
       });
     });
-
+    this._player.on('loaded', ()=> {
+      this.trigger('loadstart');
+      this.trigger('loadedmetadata');
+    });
     this._player.on('pause', () => this._vimeoState.playing = false);
     this._player.on('play', () => {
       this._vimeoState.playing = true;
