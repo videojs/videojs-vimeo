@@ -30,5 +30,4 @@ node_modules/
 
 # Build-related directories
 docs/api/
-es5/
 test/dist/
