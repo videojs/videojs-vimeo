@@ -92,7 +92,17 @@ class Vimeo extends Tech {
         if (this._vimeoState.progress.duration !== progress.duration) {
           this.trigger('durationchange');
         }
-        this._vimeoState.progress = progress;
+        if (e === 'progress') {
+          this._vimeoState.progress.buffered = progress.seconds;
+          this._vimeoState.progress.duration = progress.duration;
+        } else {
+          this._vimeoState.progress.seconds = progress.seconds;
+          this._vimeoState.progress.percent = progress.percent;
+          this._vimeoState.progress.duration = progress.duration;
+          if (progress.seconds > this._vimeoState.progress.buffered) {
+            this._vimeoState.progress.buffered = progress.seconds;
+          }
+        }
         this.trigger(e);
       });
     });
@@ -120,7 +130,8 @@ class Vimeo extends Tech {
       progress: {
         seconds: 0,
         percent: 0,
-        duration: 0
+        duration: 0,
+        buffered: 0
       }
     };
 
@@ -184,7 +195,7 @@ class Vimeo extends Tech {
   buffered() {
     const progress = this._vimeoState.progress;
 
-    return videojs.createTimeRange(0, progress.percent * progress.duration);
+    return videojs.createTimeRange(0, progress.buffered);
   }
 
   paused() {
