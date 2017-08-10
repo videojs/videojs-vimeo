@@ -87,6 +87,10 @@ class Vimeo extends Tech {
     this._player = new VimeoPlayer(this.el(), vimeoOptions);
     this.initVimeoState();
 
+    this._player.on('loaded', () => {
+      this.trigger('loadedmetadata');
+    });
+
     ['play', 'pause', 'ended', 'timeupdate', 'progress', 'seeked'].forEach(e => {
       this._player.on(e, (progress) => {
         if (this._vimeoState.progress.duration !== progress.duration) {
