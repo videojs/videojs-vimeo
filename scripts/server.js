@@ -16,7 +16,7 @@ const nameify = (str) =>
   str.replace(/%s/g, pkg.name.split('/').reverse()[0]);
 
 const srces = {
-  js: 'src/vimeo.js',
+  js: 'src/Vimeo.js',
 };
 
 const dests = {
