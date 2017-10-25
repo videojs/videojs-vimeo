@@ -211,7 +211,7 @@ class Vimeo extends Tech {
   }
 
   play() {
-    this._player.play();
+    return this._player.play();
   }
 
   muted() {
