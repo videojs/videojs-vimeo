@@ -92,7 +92,7 @@
     "qunitjs": "^1.21.0",
     "rimraf": "^2.5.1",
     "sinon": "~1.14.0",
-    "uglify-js": "^2.6.1",
+    "uglify-js": "^3.2.2",
     "videojs-standard": "^4.0.0"
   },
   "config": {
