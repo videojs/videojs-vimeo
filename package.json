@@ -91,7 +91,7 @@
     "npm-run-all": "^1.5.1",
     "qunitjs": "^1.21.0",
     "rimraf": "^2.5.1",
-    "sinon": "~1.14.0",
+    "sinon": "~4.2.3",
     "uglify-js": "^2.6.1",
     "videojs-standard": "^4.0.0"
   },
