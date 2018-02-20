@@ -210,6 +210,10 @@ class Vimeo extends Tech {
     return this._vimeoState.ended;
   }
 
+  preload() {}
+  load() {}
+  reset() {}
+
   // Vimeo does has a mute API and native controls aren't being used,
   // so setMuted doesn't really make sense and shouldn't be called.
   // setMuted(mute) {}
