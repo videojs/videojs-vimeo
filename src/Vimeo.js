@@ -50,7 +50,14 @@ class Vimeo extends Tech {
 
     injectCss();
     this.setPoster(options.poster);
-    this.initVimeoPlayer();
+
+    this.setTimeout(function() {
+      if (this.el_) {
+        this.el_.parentNode.className += ' vjs-vimeo';
+
+        this.initVimeoPlayer();
+      }
+    }.bind(this));
   }
 
   initVimeoPlayer() {
