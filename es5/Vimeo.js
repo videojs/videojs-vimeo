@@ -248,8 +248,20 @@ var Vimeo = function (_Tech) {
     return this._vimeoState.ended;
   };
 
-  Vimeo.prototype.setMuted = function setMuted() {
-    this.setVolume(0);
+  Vimeo.prototype.setMuted = function setMuted(mute) {
+    if (!this._player) {
+      return;
+    }
+
+    if (mute) {
+      this._vimeoState.beforeMuteVolume = this._vimeoState.volume;
+      this.setVolume(0);
+    } else {
+      this.setVolume(this._vimeoState.beforeMuteVolume);
+    }
+    this.setTimeout(function () {
+      this.trigger('volumechange');
+    }, 50);
   };
 
   return Vimeo;

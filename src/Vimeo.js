@@ -219,8 +219,20 @@ class Vimeo extends Tech {
     return this._vimeoState.ended;
   }
 
-  setMuted() {
-    this.setVolume(0);
+  setMuted(mute) {
+    if (!this._player) {
+      return;
+    }
+
+    if (mute) {
+      this._vimeoState.beforeMuteVolume = this._vimeoState.volume;
+      this.setVolume(0);
+    } else {
+      this.setVolume(this._vimeoState.beforeMuteVolume);
+    }
+    this.setTimeout( function(){
+      this.trigger('volumechange');
+    }, 50);
   }
 }
 
