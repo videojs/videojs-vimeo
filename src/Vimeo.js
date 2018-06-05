@@ -50,7 +50,14 @@ class Vimeo extends Tech {
 
     injectCss();
     this.setPoster(options.poster);
-    this.initVimeoPlayer();
+
+    this.setTimeout(function() {
+      if (this.el_) {
+        this.el_.parentNode.className += ' vjs-vimeo';
+
+        this.initVimeoPlayer();
+      }
+    }.bind(this));
   }
 
   initVimeoPlayer() {
@@ -106,7 +113,7 @@ class Vimeo extends Tech {
       this._vimeoState.playing = false;
       this._vimeoState.ended = true;
     });
-    this._player.on('volumechange', (v) => this._vimeoState.volume = v);
+    this._player.on('volumechange', this.onPlayerVolumeChange.bind(this));
     this._player.on('error', e => this.trigger('error', e));
 
     this.triggerReady();
@@ -142,7 +149,7 @@ class Vimeo extends Tech {
   }
 
   controls() {
-    return true;
+    return false;
   }
 
   supportsFullScreen() {
@@ -169,12 +176,17 @@ class Vimeo extends Tech {
     this._player.setCurrentTime(time);
   }
 
+  onPlayerVolumeChange() {
+    this.trigger('volumechange');
+  }
+
   volume() {
     return this._vimeoState.volume;
   }
 
   setVolume(volume) {
-    return this._player.setVolume(volume);
+    this._vimeoState.volume = volume;
+    this._player.setVolume(volume);
   }
 
   duration() {
@@ -207,9 +219,21 @@ class Vimeo extends Tech {
     return this._vimeoState.ended;
   }
 
-  // Vimeo does has a mute API and native controls aren't being used,
-  // so setMuted doesn't really make sense and shouldn't be called.
-  // setMuted(mute) {}
+  setMuted(mute) {
+    if (!this._player) {
+      return;
+    }
+
+    if (mute) {
+      this._vimeoState.beforeMuteVolume = this._vimeoState.volume;
+      this.setVolume(0);
+    } else {
+      this.setVolume(this._vimeoState.beforeMuteVolume);
+    }
+    this.setTimeout( function(){
+      this.trigger('volumechange');
+    }, 50);
+  }
 }
 
 Vimeo.prototype.featuresTimeupdateEvents = true;
