@@ -63,7 +63,7 @@
   "dependencies": {
     "@vimeo/player": "^2.0.1",
     "browserify-versionify": "^1.0.6",
-    "video.js": "^5.16"
+    "video.js": "^7.1.0"
   },
   "devDependencies": {
     "babel-cli": "^6.14.0",
@@ -93,7 +93,7 @@
     "rimraf": "^2.5.1",
     "sinon": "~1.14.0",
     "uglify-js": "^2.6.1",
-    "videojs-standard": "^4.0.0"
+    "videojs-standard": "^6.0.4"
   },
   "config": {
     "ghooks": {
