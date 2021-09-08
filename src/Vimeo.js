@@ -1,8 +1,8 @@
 import videojs from 'video.js';
 import VimeoPlayer from '@vimeo/player';
 
-const Component = videojs.getComponent('Component');
-const Tech = videojs.getComponent('Tech');
+const Tech = videojs.getTech('Tech');
+
 let cssInjected = false;
 
 // Since the iframe can't be touched using Vimeo's way of embedding,
@@ -263,7 +263,6 @@ Vimeo.nativeSourceHandler.dispose = function() { };
 
 Vimeo.registerSourceHandler(Vimeo.nativeSourceHandler);
 
-Component.registerComponent('Vimeo', Vimeo);
 Tech.registerTech('Vimeo', Vimeo);
 
 // Include the version number.
