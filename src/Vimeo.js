@@ -131,7 +131,7 @@ class Vimeo extends Tech {
   }
 
   createEl() {
-    const div = videojs.createEl('div', {
+    const div = videojs.dom.createEl('div', {
       id: this.options_.techId
     });
 
