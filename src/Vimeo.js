@@ -1,8 +1,8 @@
 import videojs from 'video.js';
 import VimeoPlayer from '@vimeo/player';
 
-const Component = videojs.getComponent('Component');
-const Tech = videojs.getComponent('Tech');
+const Tech = videojs.getTech('Tech');
+
 let cssInjected = false;
 
 // Since the iframe can't be touched using Vimeo's way of embedding,
@@ -131,7 +131,7 @@ class Vimeo extends Tech {
   }
 
   createEl() {
-    const div = videojs.createEl('div', {
+    const div = videojs.dom.createEl('div', {
       id: this.options_.techId
     });
 
@@ -206,6 +206,10 @@ class Vimeo extends Tech {
   ended() {
     return this._vimeoState.ended;
   }
+  
+  playbackRate() {
+    return 1;
+  }  
 
   // Vimeo does has a mute API and native controls aren't being used,
   // so setMuted doesn't really make sense and shouldn't be called.
@@ -263,7 +267,6 @@ Vimeo.nativeSourceHandler.dispose = function() { };
 
 Vimeo.registerSourceHandler(Vimeo.nativeSourceHandler);
 
-Component.registerComponent('Vimeo', Vimeo);
 Tech.registerTech('Vimeo', Vimeo);
 
 // Include the version number.
